@@ -1,0 +1,39 @@
+.pdf-references-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .long-button {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #009999;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: normal;
+    transition: background-color 0.3s;
+  }
+  
+  .long-button:hover {
+    background-color: #007b7b;
+  }
+  
+  .left-popup {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 300px;
+    height: 80%;
+    background: white;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: 0 8px 8px 0;
+    overflow-y: auto;
+  }
+  
