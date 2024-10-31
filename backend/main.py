@@ -13,6 +13,20 @@ load_dotenv(override=True)
 app = FastAPI()
 indexer = IndexerHelper()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        indexer.load_existing_index()
+        if indexer.retriever:
+            print("Index loaded successfully at startup.")
+        else:
+            print("Error: Index not loaded. Please start indexing manually if needed.")
+        yield
+    except Exception as e:
+        print(f"Startup error: {str(e)}")
+
+app = FastAPI(lifespan=lifespan)
+
 # CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
@@ -72,16 +86,17 @@ async def upload_pdf(files: list[UploadFile] = File(...)):
 
     return JSONResponse(content={"message": messages})
 
-@app.on_event("startup")
-async def startup_event():
-    try:
-        indexer.load_existing_index()
-        if indexer.retriever:
-            print("Index loaded successfully at startup.")
-        else:
-            print("Error: Index not loaded. Please start indexing manually if needed.")
-    except Exception as e:
-        print(f"Startup error: {str(e)}")
+# lifespan instead: https://fastapi.tiangolo.com/advanced/events/
+# @app.on_event("startup")
+# async def startup_event():
+#     try:
+#         indexer.load_existing_index()
+#         if indexer.retriever:
+#             print("Index loaded successfully at startup.")
+#         else:
+#             print("Error: Index not loaded. Please start indexing manually if needed.")
+#     except Exception as e:
+#         print(f"Startup error: {str(e)}")
 
 @app.get("/")
 async def root():
