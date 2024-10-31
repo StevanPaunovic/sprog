@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 import os
 
 class IndexerHelper:
@@ -78,7 +78,7 @@ class IndexerHelper:
             return []
 
         try:
-            results = self.retriever.get_relevant_documents(query)
+            results = self.retriever.invoke(query)
             relevant_chunks = []
 
             for result in results:
