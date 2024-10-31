@@ -1,4 +1,3 @@
-# main.py
 import os
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -7,10 +6,14 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from indexer_helper import IndexerHelper
 import openai
+from contextlib import asynccontextmanager
+import traceback
 
 load_dotenv(override=True)
 
-app = FastAPI()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_type = os.getenv("OPENAI_API_TYPE", "openai")
+
 indexer = IndexerHelper()
 
 @asynccontextmanager
@@ -48,8 +51,8 @@ async def ask_question(query: Query):
         results = indexer.get_relevant_chunks(query.question)
         context_texts = " ".join([result["text"] for result in results])
 
-        openai_response = openai.ChatCompletion.create(
-            engine=os.getenv("OPENAI_DEPLOYMENT_NAME"),
+        openai_response = openai.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL_NAME"),
             messages=[
                 {"role": "system", "content": "You are a helpful assistant for answering questions based on provided context."},
                 {"role": "user", "content": f"Context: {context_texts}\n\nQuestion: {query.question}"}
@@ -57,13 +60,15 @@ async def ask_question(query: Query):
             max_tokens=2000
         )
 
-        answer_text = openai_response.choices[0].message['content'].strip()
+        answer_text = openai_response.choices[0].message.content.strip()
 
         return JSONResponse(content={
             "answer": answer_text,
             "used_chunks": results 
         })
     except Exception as e:
+        print("Error in /ask endpoint:", str(e))
+        traceback.print_exc()  # Print the full traceback
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/upload-pdf")
