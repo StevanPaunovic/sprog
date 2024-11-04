@@ -5,7 +5,6 @@ import ChatBox from "./components/ChatBox/ChatBox";
 import InputBar from "./components/InputBar/InputBar";
 import PdfPopup from "./components/PdfPopup/PdfPopup";
 import PdfReferences from "./components/PdfReferences/PdfReferences";
-import CorrectAnswer from "./components/CorrectAnswer/CorrectAnswer";
 
 const apiUrl = "http://127.0.0.1:8000/ask";
 
@@ -61,7 +60,6 @@ function App() {
                 togglePdfPopup={togglePdfPopup}
             />
             <PdfReferences answerData={answerData} />
-            <CorrectAnswer />
             {isPdfPopupVisible && <PdfPopup messages={messages} togglePdfPopup={togglePdfPopup} />}
         </div>
     );

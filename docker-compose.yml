@@ -3,8 +3,8 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .              # Setzt das Hauptverzeichnis als Kontext
+      dockerfile: backend/Dockerfile
     container_name: cys_chatbot_backend
     ports:
       - "8000:8000"
@@ -13,8 +13,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .              # Setzt das Hauptverzeichnis als Kontext
+      dockerfile: frontend/Dockerfile
     container_name: cys_chatbot_frontend
     ports:
       - "3000:3000"

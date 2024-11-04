@@ -1,12 +1,19 @@
+# Backend Dockerfile
 FROM python:3.9
 
 WORKDIR /app
 
-COPY ../requirements.txt .
+# Kopiert die requirements-Datei aus dem Hauptverzeichnis
+COPY requirements.txt .
+
+# Installiert die Abhängigkeiten
 RUN pip install -r requirements.txt
 
-COPY . .
+# Kopiert den Rest des Backend-Codes aus dem aktuellen Verzeichnis
+COPY backend/ .
 
+# Öffnet den Port für Uvicorn
 EXPOSE 8000
 
+# Startet die FastAPI-Anwendung
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

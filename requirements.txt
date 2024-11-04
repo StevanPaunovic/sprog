@@ -1,19 +1,32 @@
-fastapi~=0.105.0
+# FastAPI und Web-Server
+fastapi>=0.105.0
 uvicorn
+
+# Langchain und verwandte Abhängigkeiten
 langchain
 langchain_community
 langchain-openai
-python-dotenv~=1.0.0
-python-multipart
-pydantic~=2.9.2
-pypdf
-sentence-transformers
-weasyprint
 langchain_huggingface
-bs4
+
+# Umgebung und Multipart-Formular-Verarbeitung
+python-dotenv>=1.0.0
+python-multipart
+
+# Pydantic für Datenschemata
+pydantic>=2.9.2
+
+# PDF- und Dokumentenverarbeitung
+pypdf
+weasyprint==53.3  # festgelegte stabile Version
+
+# Transformer-Modelle und Embeddings
+sentence-transformers
+faiss-cpu  # CPU-Version für FAISS-Indexierung
+
+# Zusätzliche Bibliotheken
 requests
-faiss-cpu
-react-icons
-beautifulsoup4==4.10.0
-weasyprint==53.3
-openai~=1.53.0
+beautifulsoup4==4.10.0  # für HTML-Parsing und Web-Scraping
+bs4  # Short alias für BeautifulSoup4 (optional, redundant)
+
+# OpenAI-API-Client
+openai>=1.53.0
