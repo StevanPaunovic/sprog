@@ -3,6 +3,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 import os
 
+
 class IndexerHelper:
     def __init__(self):
         self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
@@ -35,14 +36,13 @@ class IndexerHelper:
                 file_name = page.metadata.get("source", "Unknown PDF")
                 page_number = page.metadata.get("page", 1)
                 chunk_id = f"{file_name}_page_{page_number}"
-                
+
                 # Aktualisiere die Metadaten des Chunks
                 page.metadata["file_name"] = file_name
                 page.metadata["page_number"] = page_number
                 page.metadata["chunk_id"] = chunk_id
 
                 print("Indexing chunk with metadata:", page.metadata)
-
 
             if pages:
                 # FAISS-Index erstellen und speichern

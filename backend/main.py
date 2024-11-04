@@ -16,6 +16,7 @@ openai.api_type = os.getenv("OPENAI_API_TYPE", "openai")
 
 indexer = IndexerHelper()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Startup error: {str(e)}")
 
+
 app = FastAPI(lifespan=lifespan)
 
 # CORS middleware configuration
@@ -39,8 +41,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class Query(BaseModel):
     question: str
+
 
 @app.post("/ask")
 async def ask_question(query: Query):
@@ -54,7 +58,8 @@ async def ask_question(query: Query):
         openai_response = openai.chat.completions.create(
             model=os.getenv("OPENAI_MODEL_NAME"),
             messages=[
-                {"role": "system", "content": "You are a helpful assistant for answering questions based on provided context."},
+                {"role": "system",
+                 "content": "You are a helpful assistant for answering questions based on provided context."},
                 {"role": "user", "content": f"Context: {context_texts}\n\nQuestion: {query.question}"}
             ],
             max_tokens=2000
@@ -64,12 +69,13 @@ async def ask_question(query: Query):
 
         return JSONResponse(content={
             "answer": answer_text,
-            "used_chunks": results 
+            "used_chunks": results
         })
     except Exception as e:
         print("Error in /ask endpoint:", str(e))
         traceback.print_exc()  # Print the full traceback
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
 
 @app.post("/upload-pdf")
 async def upload_pdf(files: list[UploadFile] = File(...)):
@@ -90,6 +96,7 @@ async def upload_pdf(files: list[UploadFile] = File(...)):
         messages.append(f"Fehler bei der Indexierung: {str(e)}")
 
     return JSONResponse(content={"message": messages})
+
 
 # lifespan instead: https://fastapi.tiangolo.com/advanced/events/
 # @app.on_event("startup")
