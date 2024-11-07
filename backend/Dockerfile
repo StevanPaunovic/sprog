@@ -7,7 +7,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Installiert die Abhängigkeiten
-RUN pip install -r requirements.txt
+RUN pip install --default-timeout=1000 -r requirements.txt
 
 # Kopiert den Rest des Backend-Codes aus dem aktuellen Verzeichnis
 COPY backend/ .
