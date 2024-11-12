@@ -1,96 +1,91 @@
+import uuid
+
 from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
-import os
 
 
 class IndexerHelper:
-    def __init__(self):
-        self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
+    def __init__(self, collection):
         self.data_path = "./RAG/data/documentation/"
-        self.db_path = "./RAG/dbs/documentation/faiss_index"
-        self.embeddings = self.load_embeddings()
-        self.retriever = None
-
-    def load_embeddings(self):
-        try:
-            return HuggingFaceEmbeddings(model_name=self.model_name, model_kwargs={'device': 'cpu'})
-        except Exception as e:
-            print(f"Failed to load embeddings: {e}")
-            return None
+        self.collection = collection
 
     def start_index(self):
-        if self.embeddings is None:
-            print("Embeddings not loaded. Indexing cannot proceed.")
-            return
-
+        """
+        Indexes PDF documents by splitting them into chunks, creating embeddings, and storing them in ChromaDB.
+        """
         try:
-            # PDF-Loader mit Chunk-Splitting
+            # Load and split PDF files into chunks
             loader = PyPDFDirectoryLoader(self.data_path)
             print("Loading and splitting PDF files from directory.")
             pages = loader.load_and_split()
 
-            # Fügt Metadaten zu jedem Chunk hinzu
+            indexed_chunks = []  # List to store indexed chunks for response
+
+            # Process and add each page chunk to the ChromaDB collection
             for page in pages:
-                # Hier werden Metadaten für den Chunk hinzugefügt
                 file_name = page.metadata.get("source", "Unknown PDF")
                 page_number = page.metadata.get("page", 1)
                 chunk_id = f"{file_name}_page_{page_number}"
 
-                # Aktualisiere die Metadaten des Chunks
-                page.metadata["file_name"] = file_name
-                page.metadata["page_number"] = page_number
-                page.metadata["chunk_id"] = chunk_id
+                # Update the metadata for the chunk
+                metadata = {
+                    "file_name": file_name,
+                    "page_number": page_number,
+                    "chunk_id": chunk_id
+                }
+
+                # Generate a unique ID for the document
+                unique_id = str(uuid.uuid4())
 
                 print("Indexing chunk with metadata:", page.metadata)
 
-            if pages:
-                # FAISS-Index erstellen und speichern
-                db = FAISS.from_documents(documents=pages, embedding=self.embeddings)
-                db.save_local(self.db_path)
-                self.retriever = db.as_retriever()
-                print("Indexing completed successfully and retriever set.")
-            else:
-                print("No pages to index. Please verify PDF files.")
+                # Add the document text and metadata to ChromaDB
+                self.collection.add(
+                    ids=[unique_id],
+                    documents=[page.page_content],  # Use page.page_content to pass the text content
+                    metadatas=[metadata]  # Pass metadata explicitly
+                )
+
+                # Store indexed chunk information for feedback
+                indexed_chunks.append({
+                    "id": unique_id,
+                    "text": page.page_content,
+                    "metadata": metadata
+                })
+
+                print("Indexed chunk with metadata:", page.metadata)
+
+            print("Indexing completed and documents stored in ChromaDB.")
+            return indexed_chunks
 
         except Exception as exc:
             print("Failed to index documents:", str(exc))
+            return []
 
-    def load_existing_index(self):
-        if not os.path.exists(self.db_path):
-            print(f"FAISS index not found at {self.db_path}. Run start_index() first.")
-            return
-
-        try:
-            print("Loading existing FAISS index.")
-            db = FAISS.load_local(self.db_path, embeddings=self.embeddings, allow_dangerous_deserialization=True)
-            if isinstance(db, FAISS):
-                self.retriever = db.as_retriever()
-                print("Existing FAISS index and retriever loaded successfully.")
-            else:
-                print("Error: Loaded object is not a valid FAISS index.")
-        except Exception as exc:
-            print("Error loading existing index:", str(exc))
-
-    def get_relevant_chunks(self, query):
-        if not self.retriever:
-            print("Retriever not set. Please run start_index or load_existing_index first.")
+    def get_relevant_chunks(self, query_text):
+        if not self.collection:
+            print("ChromaDB collection not set. Please ensure it is initialized.")
             return []
 
         try:
-            results = self.retriever.invoke(query)
-            relevant_chunks = []
+            # Query ChromaDB for the top relevant chunks based on similarity to the query embedding
+            results = self.collection.query(
+                query_texts=[query_text],
+                n_results=5  # Specify how many similar chunks you want to retrieve
+            )
+            print(f"results: {results}")
 
-            for result in results:
-                # Extrahiere Text und Metadaten des Chunks
-                text = result.page_content
-                metadata = result.metadata
-                relevant_chunks.append({
+            documents = results["documents"][0]  # Access the first query's document list
+            metadatas = results["metadatas"][0]  # Access the first query's metadata list
+
+            relevant_chunks = [
+                {
                     "text": text,
                     "file_name": metadata.get("file_name"),
                     "page_number": metadata.get("page_number"),
                     "chunk_id": metadata.get("chunk_id")
-                })
+                }
+                for text, metadata in zip(documents, metadatas)
+            ]
 
             return relevant_chunks
         except Exception as e:
