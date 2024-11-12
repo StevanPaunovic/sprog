@@ -22,7 +22,7 @@ function PdfPopup({ togglePdfPopup }) {
         selectedFiles.forEach(file => formData.append("files", file));
     
         try {
-            const response = await fetch("http://localhost:8000/upload-pdf", {
+            const response = await fetch("http://localhost:8080/upload-pdf", {
                 method: "POST",
                 body: formData,
             });
