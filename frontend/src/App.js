@@ -6,7 +6,7 @@ import InputBar from "./components/InputBar/InputBar";
 import PdfPopup from "./components/PdfPopup/PdfPopup";
 import PdfReferences from "./components/PdfReferences/PdfReferences";
 
-const apiUrl = "http://127.0.0.1:8000/ask";
+const apiUrl = `${process.env.REACT_APP_BACKEND_URL}/ask`
 
 function App() {
     const [messages, setMessages] = useState([]);

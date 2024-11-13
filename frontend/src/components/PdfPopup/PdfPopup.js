@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "./PdfPopup.css";
 
+// const REACT_APP_BACKEND_URL = process.env.REACT_APP_BACKEND_URL
+
 function PdfPopup({ togglePdfPopup }) {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [uploadStatus, setUploadStatus] = useState("");
@@ -22,7 +24,7 @@ function PdfPopup({ togglePdfPopup }) {
         selectedFiles.forEach(file => formData.append("files", file));
     
         try {
-            const response = await fetch("http://localhost:8000/upload-pdf", {
+            const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/upload-pdf`, {
                 method: "POST",
                 body: formData,
             });

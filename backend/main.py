@@ -1,4 +1,7 @@
 import os
+
+import chromadb
+import chromadb.utils.embedding_functions as embedding_functions
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -14,17 +17,26 @@ load_dotenv(override=True)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.api_type = os.getenv("OPENAI_API_TYPE", "openai")
 
-indexer = IndexerHelper()
+client = chromadb.HttpClient(host=os.getenv('CHROMA_HOST'), port=os.getenv('CHROMA_PORT'))  # ChromaDB service details
+
+openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+                api_key=openai.api_key,
+                model_name="text-embedding-ada-002")
+
+collection = client.get_or_create_collection(name="my_collection",embedding_function=openai_ef)
+
+indexer = IndexerHelper(collection=collection)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         indexer.load_existing_index()
-        if indexer.retriever:
-            print("Index loaded successfully at startup.")
+        # Check if the ChromaDB collection is ready
+        if indexer.collection:
+            print("ChromaDB collection is ready at startup.")
         else:
-            print("Error: Index not loaded. Please start indexing manually if needed.")
+            print("Error: ChromaDB collection not initialized. Please check your setup.")
         yield
     except Exception as e:
         print(f"Startup error: {str(e)}")
@@ -35,7 +47,7 @@ app = FastAPI(lifespan=lifespan)
 # CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://frontend:3000", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,11 +61,11 @@ class Query(BaseModel):
 @app.post("/ask")
 async def ask_question(query: Query):
     try:
-        if not indexer.retriever:
-            return JSONResponse(content={"error": "Index not loaded"}, status_code=500)
-
         results = indexer.get_relevant_chunks(query.question)
         context_texts = " ".join([result["text"] for result in results])
+
+        if not results:
+            return JSONResponse(content={"error": "No relevant chunks found."}, status_code=404)
 
         openai_response = openai.chat.completions.create(
             model=os.getenv("OPENAI_MODEL_NAME"),
@@ -89,27 +101,37 @@ async def upload_pdf(files: list[UploadFile] = File(...)):
 
         messages.append(f"{file.filename} erfolgreich hochgeladen")
 
-    try:
-        indexer.start_index()
-        messages.append("Indexierung abgeschlossen.")
-    except Exception as e:
-        messages.append(f"Fehler bei der Indexierung: {str(e)}")
+        try:
+            indexed_data = indexer.start_index(file_location)
+            for chunk in indexed_data:
+                collection.add(
+                    ids=[chunk["id"]],
+                    documents=[chunk["text"]],
+                    metadatas=[chunk["metadata"]]
+                )
+            messages.append(f"Indexierung abgeschlossen für {file.filename} und in ChromaDB gespeichert.")
+        except Exception as e:
+            messages.append(f"Fehler bei der Indexierung von {file.filename}: {str(e)}")
 
     return JSONResponse(content={"message": messages})
 
 
-# lifespan instead: https://fastapi.tiangolo.com/advanced/events/
-# @app.on_event("startup")
-# async def startup_event():
-#     try:
-#         indexer.load_existing_index()
-#         if indexer.retriever:
-#             print("Index loaded successfully at startup.")
-#         else:
-#             print("Error: Index not loaded. Please start indexing manually if needed.")
-#     except Exception as e:
-#         print(f"Startup error: {str(e)}")
-
 @app.get("/")
 async def root():
     return {"message": "Welcome to the AI Chatbot API"}
+
+
+@app.get("/list-documents")
+async def list_documents():
+    try:
+        # Fetch all documents (or a sample) from ChromaDB
+        response = collection.query(query_texts=["what is stock prediction"],where_document={"$contains":"stock"}, n_results=10)
+
+        return JSONResponse(content=response)
+    except Exception as e:
+        error_details = {"error": str(e)}
+        if hasattr(e, 'response'):
+            error_details["response"] = e.response
+        if hasattr(e, 'body'):
+            error_details["body"] = e.body
+        return JSONResponse(content=error_details, status_code=500)
