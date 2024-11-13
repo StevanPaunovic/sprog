@@ -17,7 +17,7 @@ load_dotenv(override=True)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.api_type = os.getenv("OPENAI_API_TYPE", "openai")
 
-client = chromadb.HttpClient(host='chromadb', port=8000)  # ChromaDB service details
+client = chromadb.HttpClient(host=os.getenv('CHROMA_HOST'), port=os.getenv('CHROMA_PORT'))  # ChromaDB service details
 
 openai_ef = embedding_functions.OpenAIEmbeddingFunction(
                 api_key=openai.api_key,
