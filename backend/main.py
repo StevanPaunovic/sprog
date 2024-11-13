@@ -100,17 +100,17 @@ async def upload_pdf(files: list[UploadFile] = File(...)):
 
         messages.append(f"{file.filename} erfolgreich hochgeladen")
 
-    try:
-        indexed_data = indexer.start_index()
-        for chunk in indexed_data:
-            collection.add(
-                ids=[chunk["id"]],
-                documents=[chunk["text"]],
-                metadatas=[chunk["metadata"]]
-            )
-        messages.append("Indexierung abgeschlossen und in ChromaDB gespeichert.")
-    except Exception as e:
-        messages.append(f"Fehler bei der Indexierung: {str(e)}")
+        try:
+            indexed_data = indexer.start_index(file_location)
+            for chunk in indexed_data:
+                collection.add(
+                    ids=[chunk["id"]],
+                    documents=[chunk["text"]],
+                    metadatas=[chunk["metadata"]]
+                )
+            messages.append(f"Indexierung abgeschlossen für {file.filename} und in ChromaDB gespeichert.")
+        except Exception as e:
+            messages.append(f"Fehler bei der Indexierung von {file.filename}: {str(e)}")
 
     return JSONResponse(content={"message": messages})
 

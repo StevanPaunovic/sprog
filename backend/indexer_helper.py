@@ -1,6 +1,7 @@
+import os
 import uuid
 
-from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_community.document_loaders import PyPDFLoader
 
 
 class IndexerHelper:
@@ -8,21 +9,20 @@ class IndexerHelper:
         self.data_path = "./RAG/data/documentation/"
         self.collection = collection
 
-    def start_index(self):
+    def start_index(self, file_path):
         """
-        Indexes PDF documents by splitting them into chunks, creating embeddings, and storing them in ChromaDB.
+        Indexes a single PDF document by splitting it into chunks, creating embeddings, and storing them in ChromaDB.
         """
         try:
-            # Load and split PDF files into chunks
-            loader = PyPDFDirectoryLoader(self.data_path)
-            print("Loading and splitting PDF files from directory.")
+            # Load and split a single PDF file into chunks
+            loader = PyPDFLoader(file_path)
             pages = loader.load_and_split()
 
             indexed_chunks = []  # List to store indexed chunks for response
 
             # Process and add each page chunk to the ChromaDB collection
             for page in pages:
-                file_name = page.metadata.get("source", "Unknown PDF")
+                file_name = page.metadata.get("source", os.path.basename(file_path))
                 page_number = page.metadata.get("page", 1)
                 chunk_id = f"{file_name}_page_{page_number}"
 
@@ -52,7 +52,7 @@ class IndexerHelper:
                     "metadata": metadata
                 })
 
-                print("Indexed chunk with metadata:", page.metadata)
+                print("Indexed chunk with metadata:", metadata)
 
             print("Indexing completed and documents stored in ChromaDB.")
             return indexed_chunks
