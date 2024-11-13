@@ -1,6 +1,8 @@
 # Frontend Dockerfile
 FROM node:14
 
+RUN apt-get update && apt-get upgrade -y
+
 WORKDIR /app/frontend
 
 # Kopiert die package.json und installiert die Abhängigkeiten

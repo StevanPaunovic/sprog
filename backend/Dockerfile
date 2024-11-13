@@ -1,6 +1,8 @@
 # Backend Dockerfile
 FROM python:3.9
 
+RUN apt-get update && apt-get upgrade -y
+
 WORKDIR /app/backend
 
 # Kopiert die requirements-Datei aus dem Hauptverzeichnis
@@ -16,4 +18,4 @@ COPY ./backend .
 EXPOSE 8080
 
 # Startet die FastAPI-Anwendung
-CMD ["uvicorn", "main:app", "--reload", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
