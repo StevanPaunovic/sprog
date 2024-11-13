@@ -31,6 +31,7 @@ indexer = IndexerHelper(collection=collection)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
+        indexer.load_existing_index()
         # Check if the ChromaDB collection is ready
         if indexer.collection:
             print("ChromaDB collection is ready at startup.")

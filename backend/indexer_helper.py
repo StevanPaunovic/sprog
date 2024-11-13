@@ -91,3 +91,16 @@ class IndexerHelper:
         except Exception as e:
             print(f"Error retrieving relevant chunks: {e}")
             return []
+
+    def load_existing_index(self):
+        """
+        Loops through all files in the data_path and indexes each one.
+        """
+        indexed_files = []
+        for filename in os.listdir(self.data_path):
+            file_path = os.path.join(self.data_path, filename)
+            if os.path.isfile(file_path) and filename.endswith(".pdf"):
+                print(f"Indexing file: {filename}")
+                indexed_chunks = self.start_index(file_path)
+                indexed_files.extend(indexed_chunks)
+        return indexed_files
