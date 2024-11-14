@@ -9,6 +9,8 @@ stages:
 
 test_job:
   stage: test
+  tags:
+    - ubuntu-runner
   script:
     - echo "Running tests..."
 
