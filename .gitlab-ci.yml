@@ -1,0 +1,20 @@
+stages:
+  - test
+  - build
+
+#variables:
+#  CONTAINER_REGISTRY:
+#  DOCKER_USERNAME:
+#  DOCKER_PASSWORD:
+
+test_job:
+  stage: test
+  script:
+    - echo "Running tests..."
+
+build_boj:
+  stage: build
+  tags:
+    - ubuntu-runner
+  script:
+    - echo "Building application..."
