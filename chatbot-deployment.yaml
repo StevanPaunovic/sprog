@@ -190,7 +190,7 @@ spec:
         - containerPort: 3000
         env:
         - name: REACT_APP_BACKEND_URL
-          value: "http://chatbot-backend-service:8080"  # Verlinkung auf das Backend
+          value: "http://localhost:8080"  # Verlinkung auf das Backend
 
 ---
 apiVersion: v1
