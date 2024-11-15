@@ -1,0 +1,242 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: chatbot-backend-deployment
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: chatbot-backend
+#   template:
+#     metadata:
+#       labels:
+#         app: chatbot-backend
+#     spec:
+#       containers:
+#       - name: chatbot-backend
+#         image: sprog-backend
+#         imagePullPolicy: IfNotPresent
+#         ports:
+#         - containerPort: 8080
+#         env:
+#         - name: CHROMA_HOST
+#           value: "chromadb"  
+#         - name: CHROMA_PORT
+#           value: "8000"  
+#         - name: AZURE_OPENAI_ENDPOINT
+#           value: "https://openai-aiattack-msa-001333-eastus2-genaimi-02.openai.azure.com"  
+#         - name: OPENAI_API_KEY
+#           value: "HIER OPEN AI API KEY EINGEBEN"   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#         - name: OPENAI_API_VERSION
+#           value: "2024-02-15-preview"  
+#         - name: OPENAI_DEPLOYMENT_NAME
+#           value: "gpt-4o"  
+#         - name: OPENAI_MODEL_NAME
+#           value: "gpt-3.5-turbo"  
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: chatbot-backend-service
+# spec:
+#   type: LoadBalancer
+#   selector:
+#     app: chatbot-backend
+#   ports:
+#   - protocol: TCP
+#     port: 8080  
+#     targetPort: 8080 
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: chatbot-frontend-deployment
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: chatbot-frontend
+#   template:
+#     metadata:
+#       labels:
+#         app: chatbot-frontend
+#     spec:
+#       containers:
+#       - name: chatbot-frontend
+#         image: sprog-frontend
+#         imagePullPolicy: IfNotPresent
+#         ports:
+#         - containerPort: 3000
+#         env:
+#         - name: REACT_APP_BACKEND_URL
+#           value: "http://localhost:8080"  # Aus der .env-Datei übernommen
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: chatbot-frontend-service
+# spec:
+#   type: LoadBalancer
+#   selector:
+#     app: chatbot-frontend
+#   ports:
+#   - protocol: TCP
+#     port: 3000  # Externer Port für den Zugriff
+#     targetPort: 3000  # Interner Container-Port
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: chatbot-chromadb-deployment
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: chatbot-chromadb
+#   template:
+#     metadata:
+#       labels:
+#         app: chatbot-chromadb
+#     spec:
+#       containers:
+#       - name: chatbot-chromadb
+#         image: chromadb/chroma:latest
+#         imagePullPolicy: IfNotPresent
+#         ports:
+#         - containerPort: 8000
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: chatbot-chromadb-service
+# spec:
+#   selector:
+#     app: chatbot-chromadb
+#   ports:
+#   - protocol: TCP
+#     port: 8000
+#     targetPort: 8000
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-backend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatbot-backend
+  template:
+    metadata:
+      labels:
+        app: chatbot-backend
+    spec:
+      containers:
+      - name: chatbot-backend
+        image: sprog-backend
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: CHROMA_HOST
+          value: "chatbot-chromadb-service"  # Name des Datenbank-Service
+        - name: CHROMA_PORT
+          value: "8000"
+        - name: OPENAI_API_KEY
+          value: "YOUR_API_KEY"  # Setze hier deinen API-Schlüssel direkt ein
+        - name: OPENAI_MODEL_NAME
+          value: "text-davinci-002"  # Beispielmodell
+        - name: OPENAI_API_TYPE
+          value: "azure"  # Beispiel API-Typ
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-backend-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: chatbot-backend
+  ports:
+  - protocol: TCP
+    port: 8080  # Externer Port für den Zugriff
+    targetPort: 8080  # Interner Container-Port
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatbot-frontend
+  template:
+    metadata:
+      labels:
+        app: chatbot-frontend
+    spec:
+      containers:
+      - name: chatbot-frontend
+        image: sprog-frontend
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_BACKEND_URL
+          value: "http://chatbot-backend-service:8080"  # Verlinkung auf das Backend
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-frontend-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: chatbot-frontend
+  ports:
+  - protocol: TCP
+    port: 3000  # Externer Port für den Zugriff
+    targetPort: 3000  # Interner Container-Port
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-chromadb-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatbot-chromadb
+  template:
+    metadata:
+      labels:
+        app: chatbot-chromadb
+    spec:
+      containers:
+      - name: chatbot-chromadb
+        image: chromadb/chroma:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-chromadb-service
+spec:
+  selector:
+    app: chatbot-chromadb
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
